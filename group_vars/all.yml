@@ -1,0 +1,25 @@
+ssh_key_path: "{{ lookup('env', 'SSH_KEY_PATH') }}"
+ansible_ssh_private_key_file: "{{ ssh_key_path }}"
+rancher_agent_version: "head"
+wireguard_interface: wg0
+wireguard_port: 51820
+vpn_network: 10.0.0.0/24
+vpn_address_map:
+  vps1: 10.0.0.1/32
+  vps2: 10.0.0.2/32
+  rancher: 10.0.0.3/32
+
+# System initial setup
+initial_setup:
+  upgrade_system: true
+  install_homebrew: true
+  update_brew_packages: true
+
+# Homebrew packages to be installed
+brew_packages:
+  - name: "wget"
+  - name: "git"
+  - name: "node"
+  - name: "docker"
+  - name: "kubectl"
+  - name: "nginx"

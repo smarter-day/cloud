@@ -1,0 +1,16 @@
+---
+- hosts: all
+  roles:
+    - role: common  # Handles initial system setup, updates, and Homebrew
+    - role: security
+    - role: docker
+    - role: wireguard
+
+- hosts: vps
+  roles:
+    - role: k8s
+    - role: nginx_ingress
+
+- hosts: rancher
+  roles:
+    - role: rancher

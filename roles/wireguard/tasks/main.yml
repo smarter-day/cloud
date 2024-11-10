@@ -1,0 +1,34 @@
+- name: Install WireGuard
+  apt:
+    name: wireguard
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure /etc/wireguard directory exists
+  file:
+    path: /etc/wireguard
+    state: directory
+    mode: 0700
+
+- name: Create WireGuard private key file
+  copy:
+    dest: /etc/wireguard/privatekey
+    content: "{{ wireguard_private_key }}"
+    mode: 0600
+
+- name: Create WireGuard public key file
+  shell: cat /etc/wireguard/privatekey | wg pubkey > /etc/wireguard/publickey
+  args:
+    creates: /etc/wireguard/publickey
+
+- name: Generate WireGuard configuration
+  template:
+    src: wg0.conf.j2
+    dest: "/etc/wireguard/{{ wireguard_interface }}.conf"
+    mode: 0600
+
+- name: Enable and start WireGuard interface
+  systemd:
+    name: "wg-quick@{{ wireguard_interface }}"
+    state: started
+    enabled: yes

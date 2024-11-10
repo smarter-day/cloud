@@ -1,0 +1,48 @@
+- name: Check if Helm is already installed
+  stat:
+    path: /usr/local/bin/helm
+  register: helm_exists
+
+- name: Install Helm
+  get_url:
+    url: https://get.helm.sh/helm-v3.9.4-linux-amd64.tar.gz
+    dest: /tmp/helm.tar.gz
+  when: not helm_exists.stat.exists
+
+- name: Extract Helm
+  unarchive:
+    src: /tmp/helm.tar.gz
+    dest: /tmp/
+    remote_src: yes
+  when: not helm_exists.stat.exists
+
+- name: Move Helm binary
+  copy:
+    src: /tmp/linux-amd64/helm
+    dest: /usr/local/bin/helm
+    mode: 0755
+  when: not helm_exists.stat.exists
+
+- name: Add NGINX Ingress Helm repo
+  shell: helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+  args:
+    creates: ~/.config/helm/repositories.yaml
+
+- name: Update Helm repos
+  shell: helm repo update
+
+- name: Install NGINX Ingress Controller
+  shell: helm install nginx-ingress ingress-nginx/ingress-nginx
+  args:
+    creates: ~/.helm
+  when: nginx_ingress_installed is not defined
+
+- name: Check if NGINX Ingress is installed
+  shell: helm list | grep nginx-ingress
+  register: nginx_ingress_check
+  failed_when: false
+
+- name: Set fact if NGINX Ingress is installed
+  set_fact:
+    nginx_ingress_installed: true
+  when: nginx_ingress_check.stdout != ""

@@ -1,0 +1,10 @@
+- hosts: vps1
+  gather_facts: no
+  tasks:
+    - name: Debug ansible_password
+      debug:
+        msg: "The password is '{{ ansible_password }}'"
+
+    - name: Debug environment variable
+      debug:
+        msg: "Environment VPS1_PASSWORD is '{{ lookup('env', 'VPS1_PASSWORD') }}'"

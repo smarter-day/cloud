@@ -1,0 +1,13 @@
+nodes:
+{% for host in groups['cluster_nodes'] %}
+  - address: {{ hostvars[host]['ansible_host'] }}
+    user: root
+    role: [controlplane,etcd,worker]
+    ssh_key_path: "{{ ssh_key_path }}"
+{% endfor %}
+
+services:
+  etcd:
+    snapshot: true
+    creation: 6h
+    retention: 24h

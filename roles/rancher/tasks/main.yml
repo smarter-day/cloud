@@ -1,0 +1,39 @@
+- name: Install Docker
+  apt:
+    name: docker.io
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Run Rancher container
+  docker_container:
+    name: rancher
+    image: rancher/rancher:latest
+    state: started
+    restart_policy: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+
+- name: Install RKE
+  get_url:
+    url: https://github.com/rancher/rke/releases/download/v1.3.15/rke_linux-amd64
+    dest: /usr/local/bin/rke
+    mode: 0755
+  args:
+    creates: /usr/local/bin/rke
+
+- name: Create cluster.yml
+  template:
+    src: cluster.yml.j2
+    dest: /root/cluster.yml
+
+- name: Run RKE to bring up the cluster
+  command: ./rke up
+  args:
+    chdir: /root
+  when: not kubeconfig.stat.exists
+
+- name: Check if cluster is initialized
+  stat:
+    path: /root/kube_config_cluster.yml
+  register: kubeconfig

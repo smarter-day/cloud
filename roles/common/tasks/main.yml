@@ -1,0 +1,55 @@
+- name: Update and upgrade apt packages
+  apt:
+    update_cache: yes
+    upgrade: dist
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure automatic updates are enabled
+  apt:
+    name: unattended-upgrades
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Configure unattended-upgrades
+  copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure fail2ban is installed
+  apt:
+    name: fail2ban
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure ClamAV antivirus is installed
+  apt:
+    name: clamav
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Disable password authentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+  notify: Restart SSH
+
+- name: Ensure SSH key is authorized
+  authorized_key:
+    user: root
+    key: "{{ lookup('file', ssh_key_path + '.pub') }}"
+    state: present
+
+- name: Configure log rotation
+  copy:
+    dest: /etc/logrotate.conf
+    content: |
+      # see "man logrotate" for details
+      weekly
+      rotate 8
+      create
+      include /etc/logrotate.d
+  when: ansible_os_family == 'Debian'

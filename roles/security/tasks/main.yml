@@ -1,0 +1,28 @@
+- name: Configure UFW default policies
+  ufw:
+    state: enabled
+    policy: deny
+    direction: incoming
+
+- name: Allow SSH through UFW
+  ufw:
+    rule: allow
+    name: OpenSSH
+
+- name: Allow HTTP through UFW
+  ufw:
+    rule: allow
+    port: 80
+    proto: tcp
+
+- name: Allow HTTPS through UFW
+  ufw:
+    rule: allow
+    port: 443
+    proto: tcp
+
+- name: Install DDoS protection tools (fail2ban)
+  apt:
+    name: fail2ban
+    state: present
+  when: ansible_os_family == 'Debian'

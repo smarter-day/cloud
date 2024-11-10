@@ -1,0 +1,72 @@
+- name: Remove conflicting system Python packages
+  apt:
+    name:
+      - python3-docker
+      - python3-dockerpy
+      - python3-dockerpycreds
+      - python3-requests
+      - python3-urllib3
+    state: absent
+    purge: yes
+  when: ansible_os_family == 'Debian'
+
+- name: Install required system packages
+  apt:
+    name:
+      - docker.io
+      - python3-pip
+      - python3-setuptools
+      - python3-wheel
+      - python3-venv
+      - libffi-dev
+      - gcc
+      - python3-dev
+      - libssl-dev
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Upgrade pip to the latest version
+  pip:
+    name: pip
+    state: latest
+    executable: pip3
+
+- name: Install required Python packages
+  pip:
+    name:
+      - docker>=5.0.0
+      - requests>=2.25.0
+      - urllib3>=1.26.0
+    state: latest
+    executable: pip3
+
+- name: Unset DOCKER_HOST environment variable if it exists
+  shell: unset DOCKER_HOST
+
+- name: Add user to docker group
+  user:
+    name: root
+    groups: docker
+    append: yes
+
+- name: Ensure Docker service is running
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Pull Rancher agent image using shell command
+  shell: docker pull rancher/rancher-agent:{{ rancher_agent_version }}
+
+- name: Run Rancher agent container using shell command
+  shell: |
+    docker run -d --privileged --restart=unless-stopped \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /var/lib/rancher:/var/lib/rancher \
+    rancher/rancher-agent:{{ rancher_agent_version }} \
+    --server https://{{ lookup('env', 'RANCHER_DOMAIN') }} \
+    --token {{ lookup('env', 'RANCHER_CLUSTER_TOKEN') }} \
+    --ca-checksum {{ lookup('env', 'RANCHER_CA_CHECKSUM') }} \
+    --address {{ ansible_host }} \
+    --internal-address {{ ansible_host }} \
+    --etcd --controlplane --worker

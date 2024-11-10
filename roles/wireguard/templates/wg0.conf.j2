@@ -1,0 +1,14 @@
+[Interface]
+Address = {{ vpn_address_map[inventory_hostname] }}
+PrivateKey = {{ wireguard_private_key }}
+ListenPort = {{ wireguard_port }}
+
+{% for host in groups['all'] %}
+{% if host != inventory_hostname %}
+[Peer]
+PublicKey = {{ hostvars[host]['wireguard_public_key'] }}
+Endpoint = {{ hostvars[host]['ansible_host'] }}:{{ wireguard_port }}
+AllowedIPs = {{ vpn_address_map[host] }}
+PersistentKeepalive = 25
+{% endif %}
+{% endfor %}
